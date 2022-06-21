@@ -7,6 +7,7 @@ import json
 
 # TODO Who even needs synchronization? (We do.)
 
+
 @dataclass
 class RansacConfig:
     threshold: "int" = 0
@@ -25,7 +26,7 @@ class RansacConfig:
         if not os.path.exists("ransac_settings.json"):
             print("No settings file, using base settings")
             return RansacConfig()
-        with open("ransac_settings.json", 'r') as settings_file:
+        with open("ransac_settings.json", "r") as settings_file:
             try:
                 return from_dict(data_class=RansacConfig, data=json.load(settings_file))
             except:
@@ -33,5 +34,5 @@ class RansacConfig:
                 return RansacConfig()
 
     def save(self):
-        with open("ransac_settings.json", 'w+') as settings_file:
+        with open("ransac_settings.json", "w+") as settings_file:
             json.dump(self.__dict__, settings_file)

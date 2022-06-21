@@ -10,7 +10,11 @@ class VRChatOSC:
 
     # Use a tuple of blink (true, blinking, false, not), x, y for now. Probably clearer as a class but
     # we're stuck in python 3.6 so still no dataclasses. God I hate python.
-    def __init__(self, cancellation_event: "threading.Event", msg_queue: "queue.Queue[tuple[bool, int, int]]"):
+    def __init__(
+        self,
+        cancellation_event: "threading.Event",
+        msg_queue: "queue.Queue[tuple[bool, int, int]]",
+    ):
         self.client = udp_client.SimpleUDPClient(VRChatOSC.OSC_IP, VRChatOSC.OSC_PORT)
         self.cancellation_event = cancellation_event
         self.msg_queue = msg_queue
@@ -29,14 +33,22 @@ class VRChatOSC:
                 continue
             # If we're not blinking, set position
             if not eye_info.blink:
-                self.client.send_message("/avatar/parameters/RightEyeX", eye_info.x)
-                self.client.send_message("/avatar/parameters/LeftEyeX", eye_info.x)
-                self.client.send_message("/avatar/parameters/EyesY", eye_info.y)
+                self.client.send_message(
+                    "/avatar/parameters/RightEyeXTrack", eye_info.x
+                )
+                self.client.send_message("/avatar/parameters/LeftEyeXTrack", eye_info.x)
+                self.client.send_message("/avatar/parameters/EyesYTrack", eye_info.y)
                 if was_blinking:
-                    self.client.send_message("/avatar/parameters/LeftEyeLid", float(1))
-                    self.client.send_message("/avatar/parameters/RightEyeLid", float(1))
+                    self.client.send_message(
+                        "/avatar/parameters/LeftEyeLidTrack", float(1)
+                    )
+                    self.client.send_message(
+                        "/avatar/parameters/RightEyeLidTrack", float(1)
+                    )
                     was_blinking = False
             else:
-                self.client.send_message("/avatar/parameters/LeftEyeLid", float(0))
-                self.client.send_message("/avatar/parameters/RightEyeLid", float(0))
+                self.client.send_message("/avatar/parameters/LeftEyeLidTrack", float(0))
+                self.client.send_message(
+                    "/avatar/parameters/RightEyeLidTrack", float(0)
+                )
                 was_blinking = True

@@ -26,6 +26,7 @@ RECENTER_EYE_NAME = "-RECENTEREYE-"
 MODE_READOUT_NAME = "-APPMODE-"
 SHOW_COLOR_IMAGE_NAME = "-SHOWCOLORIMAGE-"
 
+
 def main():
     in_roi_mode = False
 
@@ -34,35 +35,91 @@ def main():
     config.save()
 
     roi_layout = [
-        [sg.Graph((640, 480), (0, 480), (640, 0), key=ROI_SELECTION_NAME, drag_submits=True, enable_events=True)]
+        [
+            sg.Graph(
+                (640, 480),
+                (0, 480),
+                (640, 0),
+                key=ROI_SELECTION_NAME,
+                drag_submits=True,
+                enable_events=True,
+            )
+        ]
     ]
 
     # Define the window's contents
     tracking_layout = [
-        [sg.Text("Threshold"),
-         sg.Slider(range=(0, 100), default_value=config.threshold, orientation='h', key=THRESHOLD_SLIDER_NAME)],
-        [sg.Text("Rotation"),
-         sg.Slider(range=(0, 360), default_value=config.rotation_angle, orientation='h', key=ROTATION_SLIDER_NAME)],
-        [sg.Text("Eye Position Scalar"),
-         sg.Slider(range=(0, 5000), default_value=config.vrc_eye_position_scalar, orientation='h',
-                   key=SCALAR_SLIDER_NAME)],
-        [sg.Button("Restart Calibration", key=RESTART_CALIBRATION_NAME),
-         sg.Button("Recenter Eye", key=RECENTER_EYE_NAME),
-         sg.Checkbox('Show Color Image:', default=config.show_color_image, key=SHOW_COLOR_IMAGE_NAME)],
+        [
+            sg.Text("Threshold"),
+            sg.Slider(
+                range=(0, 100),
+                default_value=config.threshold,
+                orientation="h",
+                key=THRESHOLD_SLIDER_NAME,
+            ),
+        ],
+        [
+            sg.Text("Rotation"),
+            sg.Slider(
+                range=(0, 360),
+                default_value=config.rotation_angle,
+                orientation="h",
+                key=ROTATION_SLIDER_NAME,
+            ),
+        ],
+        [
+            sg.Text("Eye Position Scalar"),
+            sg.Slider(
+                range=(0, 5000),
+                default_value=config.vrc_eye_position_scalar,
+                orientation="h",
+                key=SCALAR_SLIDER_NAME,
+            ),
+        ],
+        [
+            sg.Button("Restart Calibration", key=RESTART_CALIBRATION_NAME),
+            sg.Button("Recenter Eye", key=RECENTER_EYE_NAME),
+            sg.Checkbox(
+                "Show Color Image:",
+                default=config.show_color_image,
+                key=SHOW_COLOR_IMAGE_NAME,
+            ),
+        ],
         [sg.Text("Mode:"), sg.Text("Calibrating", key=MODE_READOUT_NAME)],
         [sg.Image(filename="", key=TRACKING_IMAGE_NAME)],
-        [sg.Graph((200, 200), (-100, 100), (100, -100), background_color='white', key=OUTPUT_GRAPH_NAME,
-                  drag_submits=True, enable_events=True)]
+        [
+            sg.Graph(
+                (200, 200),
+                (-100, 100),
+                (100, -100),
+                background_color="white",
+                key=OUTPUT_GRAPH_NAME,
+                drag_submits=True,
+                enable_events=True,
+            )
+        ],
     ]
 
-    layout = [[[sg.Text("Camera Address"), sg.InputText(config.capture_source, key=CAMERA_ADDR_NAME),
-                sg.Button("Save and Restart Tracking", key=SAVE_TRACKING_BUTTON_NAME)]],
-              [sg.Button("Tracking Mode", key=TRACKING_BUTTON_NAME), sg.Button("ROI Mode", key=ROI_BUTTON_NAME)],
-              [sg.Column(tracking_layout, key=TRACKING_LAYOUT_NAME),
-               sg.Column(roi_layout, key=ROI_LAYOUT_NAME, visible=False)]]
+    layout = [
+        [
+            [
+                sg.Text("Camera Address"),
+                sg.InputText(config.capture_source, key=CAMERA_ADDR_NAME),
+                sg.Button("Save and Restart Tracking", key=SAVE_TRACKING_BUTTON_NAME),
+            ]
+        ],
+        [
+            sg.Button("Tracking Mode", key=TRACKING_BUTTON_NAME),
+            sg.Button("ROI Mode", key=ROI_BUTTON_NAME),
+        ],
+        [
+            sg.Column(tracking_layout, key=TRACKING_LAYOUT_NAME),
+            sg.Column(roi_layout, key=ROI_LAYOUT_NAME, visible=False),
+        ],
+    ]
 
     # Create the window
-    window = sg.Window('Eye Tracking', layout)
+    window = sg.Window("Eye Tracking", layout)
 
     cancellation_event = threading.Event()
 
@@ -88,13 +145,17 @@ def main():
     roi_queue = queue.Queue()
 
     image_queue: queue.Queue = queue.Queue()
-    ransac = Ransac(config, cancellation_event, capture_event, capture_queue, image_queue)
+    ransac = Ransac(
+        config, cancellation_event, capture_event, capture_queue, image_queue
+    )
     ransac_thread = threading.Thread(target=ransac.run)
     ransac_thread.start()
 
     # Only start our camera AFTER we've brought up the RANSAC thread, otherwise we'll have no consumer
     camera_status_queue = queue.Queue()
-    camera_0 = camera.Camera(config, 0, cancellation_event, capture_event, camera_status_queue, capture_queue)
+    camera_0 = camera.Camera(
+        config, 0, cancellation_event, capture_event, camera_status_queue, capture_queue
+    )
     camera_0_thread = threading.Thread(target=camera_0.run)
     camera_0_thread.start()
 
@@ -122,7 +183,10 @@ def main():
 
         changed = False
         # If anything has changed in our configuration settings, change/update those.
-        if event == SAVE_TRACKING_BUTTON_NAME and values[CAMERA_ADDR_NAME] != config.capture_source:
+        if (
+            event == SAVE_TRACKING_BUTTON_NAME
+            and values[CAMERA_ADDR_NAME] != config.capture_source
+        ):
             try:
                 # Try storing ints as ints, for those using wired cameras.
                 config.capture_source = int(values[CAMERA_ADDR_NAME])
@@ -161,7 +225,7 @@ def main():
             camera_0.set_output_queue(roi_queue)
             window[ROI_LAYOUT_NAME].update(visible=True)
             window[TRACKING_LAYOUT_NAME].update(visible=False)
-        elif event == '-GRAPH-+UP':
+        elif event == "-GRAPH-+UP":
             # Event for mouse button up in ROI mode
             is_mouse_up = True
             if abs(x0 - x1) != 0 and abs(y0 - y1) != 0:
@@ -170,12 +234,12 @@ def main():
                 config.roi_window_w = abs(x0 - x1)
                 config.roi_window_h = abs(y0 - y1)
                 config.save()
-        elif event == '-GRAPH-':
+        elif event == "-GRAPH-":
             # Event for mouse button down or mouse drag in ROI mode
             if is_mouse_up:
                 is_mouse_up = False
-                x0, y0 = values['-GRAPH-']
-            x1, y1 = values['-GRAPH-']
+                x0, y0 = values["-GRAPH-"]
+            x1, y1 = values["-GRAPH-"]
         elif event == RESTART_CALIBRATION_NAME:
             ransac.calibration_frame_counter = 300
         elif event == RECENTER_EYE_NAME:
@@ -201,7 +265,7 @@ def main():
                 graph.erase()
                 graph.draw_image(data=imgbytes, location=(0, 0))
                 if None not in (x0, y0, x1, y1):
-                    figure = graph.draw_rectangle((x0, y0), (x1, y1), line_color='blue')
+                    figure = graph.draw_rectangle((x0, y0), (x1, y1), line_color="blue")
             except queue.Empty:
                 pass
         else:
@@ -214,13 +278,21 @@ def main():
                 graph = window[OUTPUT_GRAPH_NAME]
                 graph.erase()
 
-                if eye_info.info_type != InformationOrigin.FAILURE and not eye_info.blink:
-                    graph.update(background_color='white')
-                    graph.draw_circle((eye_info.x * -100, eye_info.y * -100), 25, fill_color='black',line_color='white')
+                if (
+                    eye_info.info_type != InformationOrigin.FAILURE
+                    and not eye_info.blink
+                ):
+                    graph.update(background_color="white")
+                    graph.draw_circle(
+                        (eye_info.x * -100, eye_info.y * -100),
+                        25,
+                        fill_color="black",
+                        line_color="white",
+                    )
                 elif eye_info.blink:
-                    graph.update(background_color='blue')
+                    graph.update(background_color="blue")
                 elif eye_info.info_type == InformationOrigin.FAILURE:
-                    graph.update(background_color='red')
+                    graph.update(background_color="red")
 
                 # Relay information to OSC
                 if eye_info.info_type != InformationOrigin.FAILURE:
