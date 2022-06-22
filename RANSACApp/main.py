@@ -5,7 +5,7 @@ import queue
 import threading
 import PySimpleGUI as sg
 
-WINDOW_NAME = "RANSACApp"
+WINDOW_NAME = "EyeTrackApp"
 RIGHT_EYE_NAME = "-RIGHTEYEWIDGET-"
 LEFT_EYE_NAME = "-LEFTEYEWIDGET-"
 
@@ -64,7 +64,7 @@ def main():
             #      t2s_engine.force_stop()
             #      t2s_queue.put(None)
             #      t2s_thread.join()
-            print("Exiting RANSAC App")
+            print("Exiting EyeTrackApp")
             return
         for eye in eyes:
             eye.render(window, event, values)

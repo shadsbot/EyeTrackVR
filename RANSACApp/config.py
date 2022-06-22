@@ -22,6 +22,8 @@ class EyeTrackCameraConfig:
     show_color_image: "bool" = False
 
 
+CONFIG_FILE_NAME = "eyetrack_settings.json"
+
 @dataclass
 class EyeTrackConfig:
     version: "int" = 1
@@ -30,10 +32,10 @@ class EyeTrackConfig:
 
     @staticmethod
     def load():
-        if not os.path.exists("ransac_settings.json"):
+        if not os.path.exists(CONFIG_FILE_NAME):
             print("No settings file, using base settings")
             return EyeTrackConfig()
-        with open("ransac_settings.json", "r") as settings_file:
+        with open(CONFIG_FILE_NAME, "r") as settings_file:
             try:
                 config: EyeTrackConfig = from_dict(
                     data_class=EyeTrackConfig, data=json.load(settings_file)
@@ -48,5 +50,5 @@ class EyeTrackConfig:
                 return EyeTrackConfig()
 
     def save(self):
-        with open("ransac_settings.json", "w+") as settings_file:
+        with open(CONFIG_FILE_NAME, "w+") as settings_file:
             json.dump(obj=self.__dict__, fp=settings_file, default=lambda x: x.__dict__)
