@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import sys
 
 sys.path.append(".")
-from config import EyeTrackConfig
+from config import EyeTrackCameraConfig
 from pye3dcustom.detector_3d import CameraModel, Detector3D, DetectorMode
 import queue
 import threading
@@ -118,7 +118,7 @@ def fit_rotated_ellipse(data):
 class Ransac:
     def __init__(
         self,
-        config: "EyeTrackConfig",
+        config: "EyeTrackCameraConfig",
         cancellation_event: "threading.Event",
         capture_event: "threading.Event",
         capture_queue_incoming: "queue.Queue",
@@ -146,9 +146,8 @@ class Ransac:
         # Calibration Values
         self.xoff = 1
         self.yoff = 1
-        self.calibration_frame_counter = (
-            300  # Keep large in order to recenter correctly
-        )
+        # Keep large in order to recenter correctly
+        self.calibration_frame_counter = None
         self.eyeoffx = 1
 
         self.xmax = 69420
@@ -323,28 +322,34 @@ class Ransac:
         print("[INFO] BLINK Detected.")
 
     def run(self):
-        camera_model = CameraModel(
-            focal_length=self.config.focal_length,
-            resolution=[self.config.roi_window_w, self.config.roi_window_h],
-        )
-        detector_3d = Detector3D(
-            camera=camera_model, long_term_mode=DetectorMode.blocking
-        )
-
+        camera_model = None
+        detector_3d = None
         while True:
             # Check to make sure we haven't been requested to close
             if self.cancellation_event.is_set():
                 print("Exiting RANSAC thread")
                 return
 
+            if self.config.roi_window_w <= 0 or self.config.roi_window_h <= 0:
+                # At this point, we're waiting for the user to set up the ROI window in the GUI.
+                # Sleep a bit while we wait.
+                if self.cancellation_event.wait(0.1):
+                    return
+                continue
+
             # If our ROI configuration has changed, reset our model and detector
-            if camera_model.resolution != [
-                self.config.roi_window_w,
-                self.config.roi_window_h,
-            ]:
+            if (
+                camera_model is None
+                or detector_3d is None
+                or camera_model.resolution
+                != (
+                    self.config.roi_window_w,
+                    self.config.roi_window_h,
+                )
+            ):
                 camera_model = CameraModel(
                     focal_length=self.config.focal_length,
-                    resolution=[self.config.roi_window_w, self.config.roi_window_h],
+                    resolution=(self.config.roi_window_w, self.config.roi_window_h),
                 )
                 detector_3d = Detector3D(
                     camera=camera_model, long_term_mode=DetectorMode.blocking

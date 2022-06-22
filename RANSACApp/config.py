@@ -14,8 +14,8 @@ class EyeTrackCameraConfig:
     rotation_angle: "int" = 0
     roi_window_x: "int" = 0
     roi_window_y: "int" = 0
-    roi_window_w: "int" = 640
-    roi_window_h: "int" = 480
+    roi_window_w: "int" = 0
+    roi_window_h: "int" = 0
     focal_length: "int" = 30
     capture_source: "Union[int, str, None]" = None
     vrc_eye_position_scalar: "int" = 3000
@@ -23,6 +23,7 @@ class EyeTrackCameraConfig:
 
 
 CONFIG_FILE_NAME = "eyetrack_settings.json"
+
 
 @dataclass
 class EyeTrackConfig:

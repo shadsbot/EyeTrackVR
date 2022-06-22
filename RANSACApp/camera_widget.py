@@ -4,7 +4,7 @@ from threading import Event, Thread
 from ransac import Ransac, InformationOrigin
 from enum import Enum
 from queue import Queue, Empty
-from camera import Camera
+from camera import Camera, CameraState
 import cv2
 
 
@@ -35,6 +35,7 @@ class CameraWidget:
         self.gui_recenter_eye = f"-RECENTEREYE{widget_id}-"
         self.gui_mode_readout = f"-APPMODE{widget_id}-"
         self.gui_show_color_image = f"-SHOWCOLORIMAGE{widget_id}-"
+        self.gui_roi_message = f"-ROIMESSAGE{widget_id}-"
 
         self.main_config = main_config
         if widget_id == CameraWidgetName.RIGHT_EYE:
@@ -104,7 +105,8 @@ class CameraWidget:
                     key=self.gui_output_graph,
                     drag_submits=True,
                     enable_events=True,
-                )
+                ),
+                sg.Text("Please set ROI.", key=self.gui_roi_message, visible=False),
             ],
         ]
 
@@ -239,7 +241,19 @@ class CameraWidget:
         elif event == self.gui_recenter_eye:
             self.ransac.recenter_eye = True
 
-        if self.ransac.calibration_frame_counter != None:
+        needs_roi_set = self.config.roi_window_h <= 0 or self.config.roi_window_w <= 0
+
+        if self.config.capture_source is None or self.config.capture_source == "":
+            window[self.gui_mode_readout].update("Waiting for camera address")
+            window[self.gui_roi_message].update(visible=False)
+            window[self.gui_output_graph].update(visible=False)
+        elif self.camera.camera_status == CameraState.CONNECTING:
+            window[self.gui_mode_readout].update("Camera Connecting")
+        elif self.camera.camera_status == CameraState.DISCONNECTED:
+            window[self.gui_mode_readout].update("CAMERA DISCONNECTED")
+        elif needs_roi_set:
+            window[self.gui_mode_readout].update("Awaiting ROI Setting")
+        elif self.ransac.calibration_frame_counter != None:
             window[self.gui_mode_readout].update("Calibration")
         else:
             window[self.gui_mode_readout].update("Tracking")
@@ -265,7 +279,13 @@ class CameraWidget:
             except Empty:
                 pass
         else:
+            if needs_roi_set:
+                window[self.gui_roi_message].update(visible=True)
+                window[self.gui_output_graph].update(visible=False)
+                return
             try:
+                window[self.gui_roi_message].update(visible=False)
+                window[self.gui_output_graph].update(visible=True)
                 (maybe_image, eye_info) = self.image_queue.get(block=False)
                 imgbytes = cv2.imencode(".ppm", maybe_image)[1].tobytes()
                 window[self.gui_tracking_image].update(data=imgbytes)
@@ -294,5 +314,4 @@ class CameraWidget:
                 # if eye_info.info_type != InformationOrigin.FAILURE:
                 #     osc_put(eye_info)
             except Empty:
-                pass
-        pass
+                return

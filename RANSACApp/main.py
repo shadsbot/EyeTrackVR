@@ -22,8 +22,12 @@ def main():
 
     layout = [
         [
-            sg.Column(eyes[0].widget_layout, key=RIGHT_EYE_NAME),
-            sg.Column(eyes[1].widget_layout, key=LEFT_EYE_NAME),
+            sg.Column(
+                eyes[0].widget_layout, vertical_alignment="top", key=RIGHT_EYE_NAME
+            ),
+            sg.Column(
+                eyes[1].widget_layout, vertical_alignment="top", key=LEFT_EYE_NAME
+            ),
         ],
     ]
 
