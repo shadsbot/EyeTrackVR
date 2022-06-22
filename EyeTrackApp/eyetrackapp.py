@@ -1,3 +1,8 @@
+# Random environment variable to speed up webcam opening on the MSMF backend.
+# https://github.com/opencv/opencv/issues/17687
+import os
+
+os.environ["OPENCV_VIDEOIO_MSMF_ENABLE_HW_TRANSFORMS"] = "0"
 from osc import VRChatOSC, EyeId
 from config import EyeTrackConfig
 from camera_widget import CameraWidget
