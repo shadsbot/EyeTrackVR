@@ -1,6 +1,6 @@
-from osc import VRChatOSC
+from osc import VRChatOSC, EyeId
 from config import EyeTrackConfig
-from camera_widget import CameraWidget, CameraWidgetName
+from camera_widget import CameraWidget
 import queue
 import threading
 import PySimpleGUI as sg
@@ -14,25 +14,6 @@ def main():
     # Get Configuration
     config: EyeTrackConfig = EyeTrackConfig.load()
     config.save()
-
-    eyes = [
-        CameraWidget(CameraWidgetName.RIGHT_EYE, config),
-        CameraWidget(CameraWidgetName.LEFT_EYE, config),
-    ]
-
-    layout = [
-        [
-            sg.Column(
-                eyes[0].widget_layout, vertical_alignment="top", key=RIGHT_EYE_NAME
-            ),
-            sg.Column(
-                eyes[1].widget_layout, vertical_alignment="top", key=LEFT_EYE_NAME
-            ),
-        ],
-    ]
-
-    # Create the window
-    window = sg.Window("Eye Tracking", layout)
 
     cancellation_event = threading.Event()
 
@@ -53,8 +34,26 @@ def main():
     #  t2s_thread.start()
     #  t2s_queue.put("App Starting")
 
-    # GUI Render loop
+    eyes = [
+        CameraWidget(EyeId.RIGHT, config, osc_queue),
+        CameraWidget(EyeId.LEFT, config, osc_queue),
+    ]
 
+    layout = [
+        [
+            sg.Column(
+                eyes[0].widget_layout, vertical_alignment="top", key=RIGHT_EYE_NAME
+            ),
+            sg.Column(
+                eyes[1].widget_layout, vertical_alignment="top", key=LEFT_EYE_NAME
+            ),
+        ],
+    ]
+
+    # Create the window
+    window = sg.Window("Eye Tracking", layout)
+
+    # GUI Render loop
     while True:
         # First off, check for any events from the GUI
         event, values = window.read(timeout=1)
@@ -70,6 +69,8 @@ def main():
             #      t2s_thread.join()
             print("Exiting EyeTrackApp")
             return
+
+        # Otherwise, render all of our cameras
         for eye in eyes:
             eye.render(window, event, values)
 

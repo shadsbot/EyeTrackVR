@@ -1,6 +1,13 @@
 from pythonosc import udp_client
 import queue
 import threading
+from enum import Enum
+
+
+class EyeId(Enum):
+    RIGHT = 0
+    LEFT = 1
+    BOTH = 2
 
 
 class VRChatOSC:
@@ -28,27 +35,37 @@ class VRChatOSC:
                 print("Exiting OSC Queue")
                 return
             try:
-                eye_info = self.msg_queue.get(block=True, timeout=0.1)
+                (eye_id, eye_info) = self.msg_queue.get(block=True, timeout=0.1)
             except queue.Empty:
                 continue
             # If we're not blinking, set position
             if not eye_info.blink:
-                self.client.send_message(
-                    "/avatar/parameters/RightEyeXTrack", eye_info.x
-                )
-                self.client.send_message("/avatar/parameters/LeftEyeXTrack", eye_info.x)
+                if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                    self.client.send_message(
+                        "/avatar/parameters/RightEyeXTrack", eye_info.x
+                    )
+                if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                    self.client.send_message(
+                        "/avatar/parameters/LeftEyeXTrack", eye_info.x
+                    )
                 self.client.send_message("/avatar/parameters/EyesYTrack", eye_info.y)
                 if was_blinking:
-                    self.client.send_message(
-                        "/avatar/parameters/LeftEyeLidTrack", float(1)
-                    )
-                    self.client.send_message(
-                        "/avatar/parameters/RightEyeLidTrack", float(1)
-                    )
+                    if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                        self.client.send_message(
+                            "/avatar/parameters/LeftEyeLidTrack", float(1)
+                        )
+                    if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                        self.client.send_message(
+                            "/avatar/parameters/RightEyeLidTrack", float(1)
+                        )
                     was_blinking = False
             else:
-                self.client.send_message("/avatar/parameters/LeftEyeLidTrack", float(0))
-                self.client.send_message(
-                    "/avatar/parameters/RightEyeLidTrack", float(0)
-                )
+                if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                    self.client.send_message(
+                        "/avatar/parameters/LeftEyeLidTrack", float(0)
+                    )
+                if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                    self.client.send_message(
+                        "/avatar/parameters/RightEyeLidTrack", float(0)
+                    )
                 was_blinking = True

@@ -5,20 +5,12 @@ from eye_processor import EyeProcessor, InformationOrigin
 from enum import Enum
 from queue import Queue, Empty
 from camera import Camera, CameraState
+from osc import EyeId
 import cv2
 
 
-class CameraWidgetName(Enum):
-    RIGHT_EYE = 0
-    LEFT_EYE = 1
-
-
 class CameraWidget:
-    def __init__(
-        self,
-        widget_id: CameraWidgetName,
-        main_config: EyeTrackConfig,
-    ):
+    def __init__(self, widget_id: EyeId, main_config: EyeTrackConfig, osc_queue: Queue):
         self.gui_camera_addr = f"-CAMERAADDR{widget_id}-"
         self.gui_threshold_slider = f"-THREADHOLDSLIDER{widget_id}-"
         self.gui_rotation_slider = f"-ROTATIONSLIDER{widget_id}-"
@@ -37,11 +29,15 @@ class CameraWidget:
         self.gui_show_color_image = f"-SHOWCOLORIMAGE{widget_id}-"
         self.gui_roi_message = f"-ROIMESSAGE{widget_id}-"
 
+        self.osc_queue = osc_queue
         self.main_config = main_config
+
         if widget_id == CameraWidgetName.RIGHT_EYE:
             self.config = main_config.right_eye
+            self.eye_id = EyeId.RIGHT
         else:
             self.config = main_config.left_eye
+            self.eye_id = EyeId.LEFT
 
         self.roi_layout = [
             [
@@ -311,7 +307,7 @@ class CameraWidget:
                     graph.update(background_color="red")
 
                 # Relay information to OSC
-                # if eye_info.info_type != InformationOrigin.FAILURE:
-                #     osc_put(eye_info)
+                if eye_info.info_type != InformationOrigin.FAILURE:
+                    self.osc_queue.put((self.eye_id, eye_info))
             except Empty:
                 return
