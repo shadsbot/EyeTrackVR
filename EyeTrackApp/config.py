@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Union, Dict
-from dacite import from_dict
+from dacite import from_dict, Config
+from osc import EyeId
 import os.path
 import json
 
@@ -30,6 +31,7 @@ class EyeTrackConfig:
     version: "int" = 1
     right_eye: EyeTrackCameraConfig = EyeTrackCameraConfig()
     left_eye: EyeTrackCameraConfig = EyeTrackCameraConfig()
+    eye_display_id: "EyeId" = EyeId.RIGHT
 
     @staticmethod
     def load():
@@ -39,7 +41,7 @@ class EyeTrackConfig:
         with open(CONFIG_FILE_NAME, "r") as settings_file:
             try:
                 config: EyeTrackConfig = from_dict(
-                    data_class=EyeTrackConfig, data=json.load(settings_file)
+                    data_class=EyeTrackConfig, data=json.load(settings_file), config=Config(type_hooks={EyeId: EyeId})
                 )
                 if config.version != EyeTrackConfig().version:
                     raise RuntimeError(

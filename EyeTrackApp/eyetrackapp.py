@@ -9,6 +9,10 @@ WINDOW_NAME = "EyeTrackApp"
 RIGHT_EYE_NAME = "-RIGHTEYEWIDGET-"
 LEFT_EYE_NAME = "-LEFTEYEWIDGET-"
 
+LEFT_EYE_RADIO_NAME = "-LEFTEYERADIO-"
+RIGHT_EYE_RADIO_NAME = "-RIGHTEYERADIO-"
+BOTH_EYE_RADIO_NAME = "-BOTHEYERADIO-"
+
 
 def main():
     # Get Configuration
@@ -41,14 +45,45 @@ def main():
 
     layout = [
         [
+            sg.Radio(
+                "Right Eye",
+                "EYESELECTRADIO",
+                default=(config.eye_display_id == EyeId.RIGHT),
+                key=RIGHT_EYE_RADIO_NAME,
+            ),
+            sg.Radio(
+                "Left Eye",
+                "EYESELECTRADIO",
+                default=(config.eye_display_id == EyeId.LEFT),
+                key=LEFT_EYE_RADIO_NAME,
+            ),
+            sg.Radio(
+                "Both Eyes",
+                "EYESELECTRADIO",
+                default=(config.eye_display_id == EyeId.BOTH),
+                key=BOTH_EYE_RADIO_NAME,
+            ),
+        ],
+        [
             sg.Column(
-                eyes[0].widget_layout, vertical_alignment="top", key=RIGHT_EYE_NAME
+                eyes[0].widget_layout,
+                vertical_alignment="top",
+                key=RIGHT_EYE_NAME,
+                visible=(config.eye_display_id in [EyeId.RIGHT, EyeId.BOTH]),
             ),
             sg.Column(
-                eyes[1].widget_layout, vertical_alignment="top", key=LEFT_EYE_NAME
+                eyes[1].widget_layout,
+                vertical_alignment="top",
+                key=LEFT_EYE_NAME,
+                visible=(config.eye_display_id in [EyeId.LEFT, EyeId.BOTH]),
             ),
         ],
     ]
+
+    if config.eye_display_id in [EyeId.RIGHT, EyeId.BOTH]:
+        eyes[0].start()
+    if config.eye_display_id in [EyeId.LEFT, EyeId.BOTH]:
+        eyes[1].start()
 
     # Create the window
     window = sg.Window("Eye Tracking", layout)
@@ -61,7 +96,7 @@ def main():
         # If we're in either mode and someone hits q, quit immediately
         if event == "Exit" or event == sg.WIN_CLOSED:
             for eye in eyes:
-                eye.shutdown()
+                eye.stop()
             cancellation_event.set()
             osc_thread.join()
             #      t2s_engine.force_stop()
@@ -70,9 +105,32 @@ def main():
             print("Exiting EyeTrackApp")
             return
 
+        if values[RIGHT_EYE_RADIO_NAME] and config.eye_display_id != EyeId.RIGHT:
+            eyes[0].start()
+            eyes[1].stop()
+            window[RIGHT_EYE_NAME].update(visible=True)
+            window[LEFT_EYE_NAME].update(visible=False)
+            config.eye_display_id = EyeId.RIGHT
+            config.save()
+        elif values[LEFT_EYE_RADIO_NAME] and config.eye_display_id != EyeId.LEFT:
+            eyes[0].stop()
+            eyes[1].start()
+            window[RIGHT_EYE_NAME].update(visible=False)
+            window[LEFT_EYE_NAME].update(visible=True)
+            config.eye_display_id = EyeId.LEFT
+            config.save()
+        elif values[BOTH_EYE_RADIO_NAME] and config.eye_display_id != EyeId.BOTH:
+            eyes[0].start()
+            eyes[1].start()
+            window[RIGHT_EYE_NAME].update(visible=True)
+            window[LEFT_EYE_NAME].update(visible=True)
+            config.eye_display_id = EyeId.BOTH
+            config.save()
+
         # Otherwise, render all of our cameras
         for eye in eyes:
-            eye.render(window, event, values)
+            if eye.started():
+                eye.render(window, event, values)
 
 
 if __name__ == "__main__":

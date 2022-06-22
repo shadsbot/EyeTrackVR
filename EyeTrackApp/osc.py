@@ -1,10 +1,10 @@
 from pythonosc import udp_client
 import queue
 import threading
-from enum import Enum
+from enum import IntEnum
 
 
-class EyeId(Enum):
+class EyeId(IntEnum):
     RIGHT = 0
     LEFT = 1
     BOTH = 2
@@ -40,31 +40,31 @@ class VRChatOSC:
                 continue
             # If we're not blinking, set position
             if not eye_info.blink:
-                if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                if eye_id in [EyeId.RIGHT, EyeId.BOTH]:
                     self.client.send_message(
                         "/avatar/parameters/RightEyeXTrack", eye_info.x
                     )
-                if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                if eye_id in [EyeId.LEFT, EyeId.BOTH]:
                     self.client.send_message(
                         "/avatar/parameters/LeftEyeXTrack", eye_info.x
                     )
                 self.client.send_message("/avatar/parameters/EyesYTrack", eye_info.y)
                 if was_blinking:
-                    if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                    if eye_id in [EyeId.LEFT, EyeId.BOTH]:
                         self.client.send_message(
                             "/avatar/parameters/LeftEyeLidTrack", float(1)
                         )
-                    if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                    if eye_id in [EyeId.RIGHT, EyeId.BOTH]:
                         self.client.send_message(
                             "/avatar/parameters/RightEyeLidTrack", float(1)
                         )
                     was_blinking = False
             else:
-                if eye_id == EyeId.LEFT or eye_id == EyeId.BOTH:
+                if eye_id in [EyeId.LEFT, EyeId.BOTH]:
                     self.client.send_message(
                         "/avatar/parameters/LeftEyeLidTrack", float(0)
                     )
-                if eye_id == EyeId.RIGHT or eye_id == EyeId.BOTH:
+                if eye_id in [EyeId.RIGHT, EyeId.BOTH]:
                     self.client.send_message(
                         "/avatar/parameters/RightEyeLidTrack", float(0)
                     )

@@ -31,13 +31,13 @@ class CameraWidget:
 
         self.osc_queue = osc_queue
         self.main_config = main_config
-
-        if widget_id == CameraWidgetName.RIGHT_EYE:
+        self.eye_id = widget_id
+        if self.eye_id == EyeId.RIGHT:
             self.config = main_config.right_eye
-            self.eye_id = EyeId.RIGHT
-        else:
+        elif self.eye_id == EyeId.LEFT:
             self.config = main_config.left_eye
-            self.eye_id = EyeId.LEFT
+        else:
+            raise RuntimeError("Cannot have a camera widget represent both eyes!")
 
         self.roi_layout = [
             [
@@ -127,6 +127,8 @@ class CameraWidget:
         ]
 
         self.cancellation_event = Event()
+        # Set the event until start is called, otherwise we can block if shutdown is called.
+        self.cancellation_event.set()
         self.capture_event = Event()
         self.capture_queue = Queue()
         self.roi_queue = Queue()
@@ -140,8 +142,6 @@ class CameraWidget:
             self.capture_queue,
             self.image_queue,
         )
-        self.ransac_thread = Thread(target=self.ransac.run)
-        self.ransac_thread.start()
 
         self.camera_status_queue = Queue()
         self.camera = Camera(
@@ -153,22 +153,34 @@ class CameraWidget:
             self.capture_queue,
         )
 
-        self.camera_thread = Thread(target=self.camera.run)
-        self.camera_thread.start()
-
         self.x0, self.y0 = None, None
         self.x1, self.y1 = None, None
         self.figure = None
         self.is_mouse_up = True
         self.in_roi_mode = False
 
-    def shutdown(self):
+    def started(self):
+        return not self.cancellation_event.is_set()
+
+    def start(self):
+        # If we're already running, bail
+        if not self.cancellation_event.is_set():
+            return
+        self.cancellation_event.clear()
+        self.ransac_thread = Thread(target=self.ransac.run)
+        self.ransac_thread.start()
+        self.camera_thread = Thread(target=self.camera.run)
+        self.camera_thread.start()
+
+    def stop(self):
+        # If we're not running yet, bail
+        if self.cancellation_event.is_set():
+            return
         self.cancellation_event.set()
         self.ransac_thread.join()
         self.camera_thread.join()
 
     def render(self, window, event, values):
-
         changed = False
         # If anything has changed in our configuration settings, change/update those.
         if (
