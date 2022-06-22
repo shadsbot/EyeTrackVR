@@ -1,7 +1,7 @@
 import PySimpleGUI as sg
 from config import EyeTrackConfig
 from threading import Event, Thread
-from ransac import Ransac, InformationOrigin
+from eye_processor import EyeProcessor, InformationOrigin
 from enum import Enum
 from queue import Queue, Empty
 from camera import Camera, CameraState
@@ -137,7 +137,7 @@ class CameraWidget:
 
         self.image_queue = Queue()
 
-        self.ransac = Ransac(
+        self.ransac = EyeProcessor(
             self.config,
             self.cancellation_event,
             self.capture_event,

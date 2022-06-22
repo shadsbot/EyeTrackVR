@@ -115,7 +115,7 @@ def fit_rotated_ellipse(data):
     return (cx, cy, w, h, theta)
 
 
-class Ransac:
+class EyeProcessor:
     def __init__(
         self,
         config: "EyeTrackCameraConfig",
