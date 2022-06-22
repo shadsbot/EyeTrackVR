@@ -1,6 +1,6 @@
 import PySimpleGUI as sg
-from config import RansacConfig
-from threading import Event, Thread, Lock
+from config import EyeTrackConfig
+from threading import Event, Thread
 from ransac import Ransac, InformationOrigin
 from enum import Enum
 from queue import Queue, Empty
@@ -17,7 +17,7 @@ class CameraWidget:
     def __init__(
         self,
         widget_id: CameraWidgetName,
-        main_config: RansacConfig,
+        main_config: EyeTrackConfig,
     ):
         self.gui_camera_addr = f"-CAMERAADDR{widget_id}-"
         self.gui_threshold_slider = f"-THREADHOLDSLIDER{widget_id}-"

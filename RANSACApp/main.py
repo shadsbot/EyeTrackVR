@@ -1,5 +1,5 @@
 from osc import VRChatOSC
-from config import RansacConfig
+from config import EyeTrackConfig
 from camera_widget import CameraWidget, CameraWidgetName
 import queue
 import threading
@@ -12,7 +12,7 @@ LEFT_EYE_NAME = "-LEFTEYEWIDGET-"
 
 def main():
     # Get Configuration
-    config: RansacConfig = RansacConfig.load()
+    config: EyeTrackConfig = EyeTrackConfig.load()
     config.save()
 
     eyes = [

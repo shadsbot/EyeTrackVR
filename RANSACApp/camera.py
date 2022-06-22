@@ -2,7 +2,7 @@ from time import sleep
 
 import numpy
 
-from config import RansacConfig
+from config import EyeTrackConfig
 import requests
 from enum import Enum
 import threading
@@ -22,7 +22,7 @@ class CameraState(Enum):
 class Camera:
     def __init__(
         self,
-        config: RansacConfig,
+        config: EyeTrackConfig,
         camera_index: int,
         cancellation_event: "threading.Event",
         capture_event: "threading.Event",

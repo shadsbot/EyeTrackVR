@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import sys
 
 sys.path.append(".")
-from config import RansacConfig
+from config import EyeTrackConfig
 from pye3dcustom.detector_3d import CameraModel, Detector3D, DetectorMode
 import queue
 import threading
@@ -118,7 +118,7 @@ def fit_rotated_ellipse(data):
 class Ransac:
     def __init__(
         self,
-        config: "RansacConfig",
+        config: "EyeTrackConfig",
         cancellation_event: "threading.Event",
         capture_event: "threading.Event",
         capture_queue_incoming: "queue.Queue",

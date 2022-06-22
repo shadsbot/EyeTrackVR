@@ -9,7 +9,7 @@ import json
 
 
 @dataclass
-class RansacCameraConfig:
+class EyeTrackCameraConfig:
     threshold: "int" = 0
     rotation_angle: "int" = 0
     roi_window_x: "int" = 0
@@ -23,29 +23,29 @@ class RansacCameraConfig:
 
 
 @dataclass
-class RansacConfig:
+class EyeTrackConfig:
     version: "int" = 1
-    right_eye: RansacCameraConfig = RansacCameraConfig()
-    left_eye: RansacCameraConfig = RansacCameraConfig()
+    right_eye: EyeTrackCameraConfig = EyeTrackCameraConfig()
+    left_eye: EyeTrackCameraConfig = EyeTrackCameraConfig()
 
     @staticmethod
     def load():
         if not os.path.exists("ransac_settings.json"):
             print("No settings file, using base settings")
-            return RansacConfig()
+            return EyeTrackConfig()
         with open("ransac_settings.json", "r") as settings_file:
             try:
-                config: RansacConfig = from_dict(
-                    data_class=RansacConfig, data=json.load(settings_file)
+                config: EyeTrackConfig = from_dict(
+                    data_class=EyeTrackConfig, data=json.load(settings_file)
                 )
-                if config.version != RansacConfig().version:
+                if config.version != EyeTrackConfig().version:
                     raise RuntimeError(
                         "Configuration does not contain version number, consider invalid"
                     )
                 return config
             except:
                 print("Configuration invalid, creating new config")
-                return RansacConfig()
+                return EyeTrackConfig()
 
     def save(self):
         with open("ransac_settings.json", "w+") as settings_file:
