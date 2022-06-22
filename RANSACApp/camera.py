@@ -9,6 +9,9 @@ import threading
 import queue
 import runpy
 import cv2
+import time
+
+WAIT_TIME = 0.1
 
 
 class CameraState(Enum):
@@ -34,11 +37,11 @@ class Camera:
         self.capture_event = capture_event
         self.cancellation_event = cancellation_event
         self.current_capture_source = config.capture_source
-        self.wired_camera: "cv2.VideoCapture" = cv2.VideoCapture(config.capture_source)
+        self.wired_camera: "cv2.VideoCapture" = None
         self.stream = None
         self.stream_frame_number = 0
         self.stream_bytes = bytes()
-        self.error_message = "Capture source {} not found, retrying in 500ms"
+        self.error_message = "Capture source {} not found, retrying"
 
     def set_output_queue(self, camera_output_outgoing: "queue.Queue"):
         self.camera_output_outgoing = camera_output_outgoing
@@ -60,20 +63,26 @@ class Camera:
                     self.stream = requests.get(self.config.capture_source, stream=True)
                 except requests.exceptions.RequestException:
                     print(self.error_message.format(self.config.capture_source))
-            else:
+            elif (
+                self.config.capture_source != None and self.config.capture_source != ""
+            ):
                 # so, they might have switched to a wired camera for some reason, no need to keep the stream running
                 self.cleanup_stream()
 
                 if (
-                    not self.wired_camera.isOpened()
+                    self.wired_camera is None
+                    or not self.wired_camera.isOpened()
                     or self.config.capture_source != self.current_capture_source
                 ):
                     print(self.error_message.format(self.config.capture_source))
-                    sleep(0.5)
+                    if self.cancellation_event.wait(WAIT_TIME):
+                        return
                     self.current_capture_source = self.config.capture_source
                     self.wired_camera = cv2.VideoCapture(self.current_capture_source)
-                    continue
-
+            else:
+                # We don't have a capture source to try yet, wait for one to show up in the GUI.
+                if self.cancellation_event.wait(WAIT_TIME):
+                    return
             # Assuming we can access our capture source, wait for another thread to request a capture.
             # Cycle every so often to see if our cancellation token has fired. This basically uses a
             # python event as a contextless, resettable one-shot channel.
